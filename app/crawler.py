@@ -1,3 +1,13 @@
+"""
+------------------------------------------------------------------------------
+Crawler
+------------------------------------------------------------------------------
+
+This module download and process data from CPTM website using the concurrent
+Tornado API [http://www.tornadoweb.org/en/stable/concurrent.html].
+
+"""
+
 import requests
 import settings
 from concurrent.futures import ThreadPoolExecutor
@@ -10,10 +20,12 @@ CptmResponse = namedtuple('CptmResponse', ['status_code', 'content'])
 
 
 class CrawlerParseException(Exception):
+    ''' Exception from Crawler parse errors '''
     pass
 
 
 class Crawler(object):
+    ''' WebCrawler to Download CPTM information. '''
     executor = ThreadPoolExecutor(max_workers=settings.crawler_workers)
     LINES = [
         'rubi', 'diamante', 'esmeralda', 'turquesa', 'coral', 'safira'
@@ -25,7 +37,18 @@ class Crawler(object):
 
     @run_on_executor
     def download_data(self):
-        response = requests.get('http://cptm.sp.gov.br/')
+        '''
+            Download Data from CPTM using requests library.
+            This run on a ThreadPoolExecutor.
+
+            usage:
+                >>> crawler = Crawler()
+                >>> response = yield crawler.download_data()
+
+            return:
+                CptmResponse
+        '''
+        response = requests.get(settings.cptm_url)
 
         return CptmResponse(
             status_code=response.status_code,
@@ -34,6 +57,23 @@ class Crawler(object):
 
     @run_on_executor
     def parse_content(self, content):
+        '''
+            Parse content and returns a dict with info.
+
+            args:
+                content: A CptmResponse.content data
+
+            usage:
+                >>> crawler = Crawler()
+                >>> crawler.parse_content(content)
+
+            returns:
+                dict
+
+            raises:
+                CrawlerParseException if any line from Crawler.LINES
+                is not found.
+        '''
         soup_content = BeautifulSoup(content, 'html.parser')
         status = {}
 
@@ -46,12 +86,14 @@ class Crawler(object):
             return status
 
     def get_problem_nature(self, info):
+        ''' Get the problem nature '''
         for (description, nature) in self.NATURE_PROBLEMS:
             if description == info:
                 return nature
         return 'other'
 
     def get_status_line(self, soup, line):
+        ''' Return the status of a specific line '''
         div_line = soup.findAll('div', {'class': line})[0]
         span_info = div_line.findAll('span')[1]
         name = span_info['class'][0]
