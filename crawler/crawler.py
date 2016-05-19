@@ -3,20 +3,13 @@
 Crawler
 ------------------------------------------------------------------------------
 
-This module download and process data from CPTM website using the concurrent
-Tornado API [http://www.tornadoweb.org/en/stable/concurrent.html].
+This module download and process data from CPTM website.
 
 """
 
 import requests
 import settings
-from concurrent.futures import ThreadPoolExecutor
-from collections import namedtuple
 from bs4 import BeautifulSoup
-from tornado.concurrent import run_on_executor
-
-
-CptmResponse = namedtuple('CptmResponse', ['status_code', 'content'])
 
 
 class CrawlerParseException(Exception):
@@ -26,7 +19,6 @@ class CrawlerParseException(Exception):
 
 class Crawler(object):
     ''' WebCrawler to Download CPTM information. '''
-    executor = ThreadPoolExecutor(max_workers=settings.crawler_workers)
     LINES = [
         'rubi', 'diamante', 'esmeralda', 'turquesa', 'coral', 'safira'
     ]
@@ -35,7 +27,6 @@ class Crawler(object):
         ('Obras', 'works'),
     )
 
-    @run_on_executor
     def download_data(self):
         '''
             Download Data from CPTM using requests library.
@@ -50,12 +41,11 @@ class Crawler(object):
         '''
         response = requests.get(settings.cptm_url)
 
-        return CptmResponse(
-            status_code=response.status_code,
-            content=response.content
-        )
+        return {
+            'status_code': response.status_code,
+            'content': response.content
+        }
 
-    @run_on_executor
     def parse_content(self, content):
         '''
             Parse content and returns a dict with info.

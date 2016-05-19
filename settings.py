@@ -35,10 +35,18 @@ port = 8000
 # Database settings
 database_name = 'cptm'
 
+# CPTM Info
+cptm_url = 'http://cptm.sp.gov.br/'
+
 # Development Settings
 debug = True
+
+# Workers
 crawler_workers = 2
-cptm_url = 'http://cptm.sp.gov.br/'
+crawler_data_workers = 1
+
+# Intervals
+crawler_download_data_interval = 0.5
 
 
 def _parse_settings():
@@ -51,6 +59,9 @@ def _parse_settings():
             value = _os.environ.get(environ_key, value)
             # Cast Info
             __dict__[key] = value_type(value)
+
+    from core.database import get_database
+    settings['db'] = __dict__['db'] = get_database()
     return __dict__
 
 __dict__ = _parse_settings()
