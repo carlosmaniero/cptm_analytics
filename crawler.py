@@ -1,10 +1,12 @@
-from concurrent.futures import ThreadPoolExecutor
-from tornado.concurrent import run_on_executor
 import requests
 import settings
-import time
-import datetime
+from concurrent.futures import ThreadPoolExecutor
+from collections import namedtuple
 from bs4 import BeautifulSoup
+from tornado.concurrent import run_on_executor
+
+
+CptmResponse = namedtuple('CptmResponse', ['status_code', 'content'])
 
 
 class CrawlerParseException(Exception):
@@ -13,52 +15,40 @@ class CrawlerParseException(Exception):
 
 class Crawler(object):
     executor = ThreadPoolExecutor(max_workers=settings.crawler_workers)
+    LINES = [
+        'rubi', 'diamante', 'esmeralda', 'turquesa', 'coral', 'safira'
+    ]
+    NATURE_PROBLEMS = (
+        ('Serviços de Manutenção', 'maintenance'),
+        ('Obras', 'works'),
+    )
 
     @run_on_executor
-    def fetch_data(self):
-        start_request = time.time()
+    def download_data(self):
         response = requests.get('http://cptm.sp.gov.br/')
-        request_time = time.time() - start_request
 
-        data = {
-            'content': response.content,
-            'status_code': response.status_code,
-            'response_datetime': datetime.datetime.now(),
-            'request_time': request_time
-        }
-
-        return data
+        return CptmResponse(
+            status_code=response.status_code,
+            content=response.content
+        )
 
     @run_on_executor
     def parse_content(self, content):
         soup_content = BeautifulSoup(content, 'html.parser')
         status = {}
-        all_normal = True
 
         try:
-            for line in lines:
+            for line in self.LINES:
                 status[line] = self.get_status_line(soup_content, line)
-                if status[line] != 'status_normal':
-                    all_normal = False
         except IndexError:
-            raise CrawlerParseException('Error on parse Content') 
+            raise CrawlerParseException('Error on parse Content')
         else:
-            if all_normal:
-                del request['content']
-
-            request['status'] = status
-            request['process_time'] = time.time() - start_process
-
-            yield from loop.run_in_executor(
-                None, db.processed.save, request
-            )
-            print('[Process]: Processed  in {} seconds'.format(
-                request['process_time']
-            ))
+            return status
 
     def get_problem_nature(self, info):
-        if 'Serviços de Manutenção' in info:
-            return 'maintenance'
+        for (description, nature) in self.NATURE_PROBLEMS:
+            if description == info:
+                return nature
         return 'other'
 
     def get_status_line(self, soup, line):
@@ -70,6 +60,10 @@ class Crawler(object):
         }
         try:
             info = span_info['data-original-title']
+
+            # Remove extra spaces
+            while '  ' in info:
+                info = info.replace('  ', ' ')
         except KeyError:
             pass
         else:
