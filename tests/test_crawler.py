@@ -1,5 +1,5 @@
 import pytest
-from app.crawler import Crawler
+from crawler.crawler import Crawler
 
 
 @pytest.mark.gen_test
