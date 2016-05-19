@@ -9,4 +9,4 @@ Ajude-nos a desenvolver <3
 
 ### Executando testes
 
-python -m pytest -s -v
+    $ python -m pytest -s -v
