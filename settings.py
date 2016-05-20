@@ -26,8 +26,6 @@ usage:
      'port': 8080}
 
 """
-import os as _os
-import pprint as _pprint
 
 # Http Settings
 port = 8000
@@ -49,23 +47,9 @@ crawler_data_workers = 1
 crawler_download_data_interval = 0.5
 
 
-def _parse_settings():
-    settings = globals()
-    __dict__ = {}
-    for key, value in settings.items():
-        if not key.startswith('_'):
-            value_type = type(value)
-            environ_key = 'CPTM_{}'.format(key.upper())
-            value = _os.environ.get(environ_key, value)
-            # Cast Info
-            __dict__[key] = value_type(value)
-
-    from core.database import get_database
-    settings['db'] = __dict__['db'] = get_database()
-    return __dict__
-
-__dict__ = _parse_settings()
-
-
 if __name__ == '__main__':
-    _pprint.pprint(__dict__)
+    import pprint as pprint
+    from core.conf import parse_settings
+
+    __dict__ = parse_settings()
+    pprint.pprint(__dict__)
