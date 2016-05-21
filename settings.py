@@ -3,28 +3,10 @@
 Settings from the project
 ------------------------------------------------------------------------------
 
-To override the settings, set an environment variable with the prefix "CPTM_".
+To override the settings, set an environment variable with the
+prefix "TORNADO_".
 
-usage:
-    # Show default settings:
-    $ python settings.py
-    {'cptm_url': 'http://cptm.sp.gov.br/',
-     'crawler_workers': 2,
-     'database_name': 'cptm',
-     'debug': True,
-     'port': 8000}
-
-    # Export a environ variable:
-    $ export CPTM_PORT=8080
-
-    # Check from settings again:
-    $ python settings.py
-    {'cptm_url': 'http://cptm.sp.gov.br/',
-     'crawler_workers': 2,
-     'database_name': 'cptm',
-     'debug': True,
-     'port': 8080}
-
+See the  core.conf module from more information.
 """
 
 # Http Settings
@@ -41,7 +23,7 @@ debug = True
 
 # Workers
 crawler_workers = 2
-crawler_data_workers = 1
+data_workers = 1
 
 # Intervals
 crawler_download_data_interval = 0.5

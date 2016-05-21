@@ -5,9 +5,10 @@ from tornado.concurrent import run_on_executor
 
 
 class CrawlerDataControl(object):
-    executor = ThreadPoolExecutor(max_workers=settings.crawler_data_workers)
-
     def __init__(self):
+        self.executor = ThreadPoolExecutor(
+            max_workers=settings.crawler_data_workers
+        )
         self.db = settings.db
 
     @run_on_executor

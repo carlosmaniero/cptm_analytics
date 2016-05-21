@@ -36,8 +36,11 @@ class Crawler(object):
                 >>> crawler = Crawler()
                 >>> response = yield crawler.download_data()
 
-            return:
-                CptmResponse
+            returns:
+                {
+                    content: ...,
+                    status_code: ...
+                }
         '''
         response = requests.get(settings.cptm_url)
 
@@ -58,10 +61,11 @@ class Crawler(object):
                 >>> crawler.parse_content(content)
 
             returns:
-                dict
+                a dict with the LINES as keys containing the
+                status of CPTM lines.
 
             raises:
-                CrawlerParseException if any line from Crawler.LINES
+                CrawlerParseException if any line from LINES
                 is not found.
         '''
         soup_content = BeautifulSoup(content, 'html.parser')
@@ -76,7 +80,7 @@ class Crawler(object):
             return status
 
     def get_problem_nature(self, info):
-        ''' Get the problem nature '''
+        ''' Returns the nature of status using the NATURE_PROBLEMS List'''
         for (description, nature) in self.NATURE_PROBLEMS:
             if description == info:
                 return nature

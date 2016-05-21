@@ -9,12 +9,14 @@ from core.conf import parse_settings
 
 
 if __name__ == "__main__":
+    # parse settings
     parse_settings()
+
+    # parse tornado options
     tornado.options.parse_command_line()
 
     # running app
     app = tornado.web.Application([], **settings.__dict__)
-    print(settings.port)
     app.listen(settings.port)
 
     # get event loop
