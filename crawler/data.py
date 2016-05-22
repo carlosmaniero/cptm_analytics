@@ -1,16 +1,9 @@
 import datetime
-import settings
-from concurrent.futures import ThreadPoolExecutor
 from tornado.concurrent import run_on_executor
+from core.database import DataControl
 
 
-class CrawlerDataControl(object):
-    def __init__(self):
-        self.executor = ThreadPoolExecutor(
-            max_workers=settings.crawler_data_workers
-        )
-        self.db = settings.db
-
+class CrawlerDataControl(DataControl):
     @run_on_executor
     def add_response(self, response, request_time):
         data = {

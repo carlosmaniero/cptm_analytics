@@ -1,4 +1,6 @@
 from crawler.crawler import Crawler
+from crawler.tasks import CrawlerTasks
+import time
 
 
 def test_download_data():
@@ -16,3 +18,7 @@ def test_parse_content():
 
     for line in Crawler.LINES:
         assert line in parsed
+
+def test_download_task():
+    tasks = CrawlerTasks()
+    download_task = tasks.task_download_data()
