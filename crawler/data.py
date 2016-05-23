@@ -22,7 +22,8 @@ class CrawlerDataControl(DataControl):
             'request_time': request_time,
             'downloaded_in': datetime.datetime.now()
         }
-        return self.db.responses.insert(data)
+        self.db.responses.insert(data)
+        return data
 
     @run_on_executor
     def count_response(self):
@@ -44,14 +45,20 @@ class CrawlerDataControl(DataControl):
         Insert a new document in the processed collection.
         This automaticly add a processed_in field (datetime).
         '''
-        response['readings'] = [datetime.datetime.now()]
+        now = datetime.datetime.now()
+        response['readings'] = [now]
+        response['latest_reading'] = now
         self.db.processed.insert(response)
+        return response
 
     @run_on_executor
     def add_processed_reading(self, response):
         response.setdefault('readings', [])
-        response['readings'].append(datetime.datetime.now())
+        now = datetime.datetime.now()
+        response['readings'].append(now)
+        response['latest_reading'] = now
         self.db.processed.save(response)
+        return response
 
     @run_on_executor
     def count_processed(self):
@@ -66,9 +73,49 @@ class CrawlerDataControl(DataControl):
         Get the lastest object processed.
         '''
         sort_by = (
-            ('processed_in', -1),
+            ('latest_reading', -1),
         )
         cursor = self.db.processed.find().sort(sort_by).limit(1)
+        try:
+            latest = cursor[0]
+        except IndexError:
+            latest = None
+        return latest
+
+    @run_on_executor
+    def add_line_info(self, line, response):
+        data = {
+            'line': line,
+            'info': response['info'][line],
+            'readings': [{
+                'reading_in': response['latest_reading'],
+                'response': response['_id']
+            }],
+            'latest_reading': response['latest_reading']
+        }
+        self.db.line.insert(data)
+        return data
+
+    @run_on_executor
+    def add_line_reading(self, line_data, response):
+        line_data.setdefault('readings', [])
+        line_data['readings'].append({
+            'reading_in': response['latest_reading'],
+            'response': response['_id']
+        })
+        line_data['latest_reading'] = response['latest_reading']
+        self.db.line.save(line_data)
+        return response
+
+    @run_on_executor
+    def get_lastest_line_info(self, line):
+        '''
+        Get the lastest line info.
+        '''
+        sort_by = (
+            ('latest_reading', -1),
+        )
+        cursor = self.db.line.find({'line': line}).sort(sort_by).limit(1)
         try:
             latest = cursor[0]
         except IndexError:

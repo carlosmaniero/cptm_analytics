@@ -13,7 +13,7 @@ from tornado import gen
 from tornado import log
 from concurrent.futures import ThreadPoolExecutor
 from core.tasks import Tasks
-from crawler.crawler import Crawler
+from crawler.crawler import Crawler, CrawlerParseException
 from crawler.data import CrawlerDataControl
 
 
@@ -46,15 +46,22 @@ class CrawlerTasks(Tasks):
             yield gen.sleep(settings.crawler_download_data_interval)
 
     @gen.coroutine
-    def compare_reponses(self, response):
-        '''
-        Compare if the response is equal to the latest
-        '''
-        latest_response = yield self.data.get_lastest_processed()
-        if response['info'] == latest_response['info']:
-            yield self.data.add_processed_reading(latest_response)
+    def compare_line(self, line, response):
+        latest_line = yield self.data.get_lastest_line_info(line)
+        if latest_line and latest_line['info'] == response['info'][line]:
+            log.logging.info('Log is equal from the {} line'.format(line))
+            yield self.data.add_line_reading(latest_line, response)
             return True     # NOQA
         return False        # NOQA
+
+    @gen.coroutine
+    def save_lines(self, response):
+        for line in self.crawler.LINES:
+            log.logging.info('Saving the {} line'.format(line))
+            equals = yield self.compare_line(line, response)
+            if not equals:
+                log.logging.info('Creating a line info from {}'.format(line))
+                yield self.data.add_line_info(line, response)
 
     @gen.coroutine
     def process_data(self, response):
@@ -65,12 +72,27 @@ class CrawlerTasks(Tasks):
         log.logging.info('Processing the {} response'.format(
             str(response['_id'])
         ))
-        info = self.crawler.parse_content(response['response']['content'])
-        del response['response']['content']
-        response['info'] = info
-        equals = yield self.compare_reponses(response)
-        if not equals:
-            yield self.data.add_processed(response)
+        try:
+            info = self.crawler.parse_content(response['response']['content'])
+        except CrawlerParseException:
+            # add to error database
+            pass
+        else:
+            del response['response']['content']
+            response['info'] = info
+            equals = False
+
+            latest_response = yield self.data.get_lastest_processed()
+            if latest_response:
+                if response['info'] == latest_response['info']:
+                    response = yield self.data.add_processed_reading(
+                        latest_response
+                    )
+                    equals = True
+
+            if not equals:
+                response = yield self.data.add_processed(response)
+            yield self.save_lines(response)
 
     @gen.coroutine
     def task_process_data(self):
