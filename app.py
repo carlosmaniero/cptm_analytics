@@ -28,4 +28,8 @@ if __name__ == "__main__":
     ])
 
     # start loop
-    loop.start()
+    try:
+        loop.start()
+    except KeyboardInterrupt:
+        print('\nbye, bye')
+        loop.close()

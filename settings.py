@@ -27,7 +27,10 @@ data_workers = 1
 
 # Intervals
 crawler_download_data_interval = 0.5
+crawler_process_data_interval = 0.25
 
+# testing
+database_test_name = 'cptm_test'
 
 if __name__ == '__main__':
     import pprint as pprint

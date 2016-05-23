@@ -35,7 +35,7 @@ def get_current_executor():
 
 class DataControl(object):
     '''
-    The is a base data control, this include simple function like
+    This a base data control, including simple function like
     get_database and get_executor.
 
     Use the @run_on_executor from the tornado.concurrent module, to run it in
