@@ -21,6 +21,7 @@ class CrawlerTasks(Tasks):
     '''
     This class is the implementation of all crawler background tasks.
     '''
+
     def __init__(self):
         self.crawler = Crawler()
         self.executor = ThreadPoolExecutor(
@@ -69,9 +70,7 @@ class CrawlerTasks(Tasks):
         Process a response using parse_content and add data to
         processed collection.
         '''
-        log.logging.info('Processing the {} response'.format(
-            str(response['_id'])
-        ))
+        log.logging.info('Processing the {} response')
         try:
             info = self.crawler.parse_content(response['response']['content'])
         except CrawlerParseException:

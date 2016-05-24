@@ -7,14 +7,17 @@ This module do the comunication with the mongodb using the DataControl.
 '''
 import datetime
 from tornado.concurrent import run_on_executor
+from tornado import gen
 from core.database import DataControl
 
 
 class CrawlerDataControl(DataControl):
-    @run_on_executor
+    _response_queue = []
+
+    @gen.coroutine
     def add_response(self, response, request_time):
         '''
-        Insert a new document in the responses collection.
+        Insert a new document in the _responses_queue.
         This automaticly add a downloaded_in field (datetime).
         '''
         data = {
@@ -22,22 +25,22 @@ class CrawlerDataControl(DataControl):
             'request_time': request_time,
             'downloaded_in': datetime.datetime.now()
         }
-        self.db.responses.insert(data)
+        self._response_queue.append(data)
         return data
 
-    @run_on_executor
+    @gen.coroutine
     def count_response(self):
         '''
-        Count the total of responses of the responses collection.
+        Count the total of responses.
         '''
-        return self.db.responses.count()
+        return len(self._response_queue)
 
     @run_on_executor
     def pop_response(self):
         '''
         Return a response and delete it from the responses collection.
         '''
-        return self.db.responses.find_and_modify(remove=True)
+        return self._response_queue.pop(0)
 
     @run_on_executor
     def add_processed(self, response):
@@ -48,6 +51,7 @@ class CrawlerDataControl(DataControl):
         now = datetime.datetime.now()
         response['readings'] = [now]
         response['latest_reading'] = now
+        response['first_reading'] = now
         self.db.processed.insert(response)
         return response
 
